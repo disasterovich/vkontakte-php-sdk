@@ -1,11 +1,5 @@
-vkontakte-php-sdk
-=================
+<?php
 
-Vkontakte PHP SDK
-
-An example of VK API usage for habrapost. The code looks like
-
-```php
 require_once('../src/Vkontakte.php');
 
 $accessToken = 'your access token';
@@ -20,4 +14,3 @@ if ($vkAPI->postToPublic(70941690, "Привет Хабр!", '/tmp/habr.png', ['
     echo "Фейл, пост не добавлен(( ищите ошибку\n";
 }
 
-```
