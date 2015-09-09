@@ -2,10 +2,14 @@
 
 require_once('../src/Vkontakte.php');
 
-$accessToken = 'your access token';
-$vkAPI = new \BW\Vkontakte(['access_token' => $accessToken]);
+define("GROUP_ID", "xxxxxxxxx");
+define("ACCESS_TOKEN", "xxxxxxxxx");
 
-if ($vkAPI->postToPublic(70941690, "Привет Хабр!", '/tmp/habr.png', ['вконтакте api', 'автопостинг', 'первые шаги'])) {
+$vkAPI = new \BW\Vkontakte(['access_token' => ACCESS_TOKEN]);
+
+$images = ['D:/tmp/1.jpg','D:/tmp/2.jpg'];
+
+if ($vkAPI->postToPublic(GROUP_ID, "Привет Хабр!", $images )) {
 
     echo "Ура! Всё работает, пост добавлен\n";
 

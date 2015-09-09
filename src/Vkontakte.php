@@ -310,10 +310,21 @@ class Vkontakte
      * @return mixed The result of curl_exec() function
      * @throws \Exception
      */
-    protected function curl($url)
+    protected function curl($url,$upload_file="")
     {
         // create curl resource
         $ch = curl_init();
+        
+        if ($upload_file)
+            {
+            curl_setopt($ch, CURLOPT_POST, 1);
+            
+            $finfo = new \finfo(FILEINFO_MIME);
+            $mime_type  = $finfo->file($upload_file);
+            
+            $args['photo'] = new \CurlFile($upload_file, $mime_type);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $args);
+            }
 
         // set url
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -348,14 +359,18 @@ class Vkontakte
      * @param $tags array message tags
      * @return bool true if operation finished successfully and false otherwise
      */
-    public function postToPublic($publicID, $text, $fullServerPathToImage, $tags = array())
+    public function postToPublic($publicID, $text, $fullServerPathToImages, $tags = array())
     {
+        $photos = [];
+        $output = [];
 
 
         $response = $this->api('photos.getWallUploadServer', [
 
             'group_id' => $publicID,
         ]);
+        
+        $uploadURL = $response->upload_url;
         /*
          * public 'upload_url' => string 'http://cs618028.vk.com/upload.php?act=do_add&mid=76989657&aid=-14&gid=70941690&hash=0c9cdfa73779ea6c904c4b5326368700&rhash=ba9b60e61e258bf8fd61536e6683e3af&swfupload=1&api=1&wallphoto=1' (length=185)
               public 'aid' => int -14
@@ -363,23 +378,28 @@ class Vkontakte
          *
          *  */
 
-        $uploadURL = $response->upload_url;
-        $output = [];
-        exec("curl -X POST -F 'photo=@$fullServerPathToImage' '$uploadURL'", $output);
-        $response = json_decode($output[0]);
-        /*
-         *  public 'server' => int 618028
-              public 'photo' => string '[{"photo":"96df595e0b:z","sizes":[["s","618028657","c5b1","RfjznPPyhxs",75,54],["m","618028657","c5b2","dQRTijvf4tE",130,93],["x","618028657","c5b3","-zUzUi-uOkU",604,432],["y","618028657","c5b4","FAAY0vnMSWc",807,577],["z","618028657","c5b5","OBZqwGjlO9s",900,644],["o","618028657","c5b6","Ku7Q6IqN5uc",130,93],["p","618028657","c5b7","0eFhSRrjxvU",200,143],["q","618028657","c5b8","F8E6QJg51o4",320,229],["r","618028657","c5b9","-a3oiI8SVOg",510,365]],"kid":"6bba9104fa05dd017597abce3ebeb215"}]' (length=496)
-              public 'hash' => string 'd02d83e70eca1c0d756d1a5d51c2fbfb' (length=32)
-         */
+        foreach ($fullServerPathToImages as $v) 
+            {
+            $output = $this->curl($uploadURL,$v);
+            
+            $response = json_decode($output);
+            
+            /*
+             *  public 'server' => int 618028
+                  public 'photo' => string '[{"photo":"96df595e0b:z","sizes":[["s","618028657","c5b1","RfjznPPyhxs",75,54],["m","618028657","c5b2","dQRTijvf4tE",130,93],["x","618028657","c5b3","-zUzUi-uOkU",604,432],["y","618028657","c5b4","FAAY0vnMSWc",807,577],["z","618028657","c5b5","OBZqwGjlO9s",900,644],["o","618028657","c5b6","Ku7Q6IqN5uc",130,93],["p","618028657","c5b7","0eFhSRrjxvU",200,143],["q","618028657","c5b8","F8E6QJg51o4",320,229],["r","618028657","c5b9","-a3oiI8SVOg",510,365]],"kid":"6bba9104fa05dd017597abce3ebeb215"}]' (length=496)
+                  public 'hash' => string 'd02d83e70eca1c0d756d1a5d51c2fbfb' (length=32)
+             */
 
 
-        $response = $this->api('photos.saveWallPhoto', [
-            'group_id' => $publicID,
-            'photo' => $response->photo,
-            'server' => $response->server,
-            'hash' => $response->hash,
-        ]);
+            $response = $this->api('photos.saveWallPhoto', [
+                'group_id' => $publicID,
+                'photo' => $response->photo,
+                'server' => $response->server,
+                'hash' => $response->hash,
+            ]);
+            
+            $photos[] = $response[0]->id;
+            }
         /*
  *
  * array (size=1)
@@ -414,7 +434,7 @@ public 'created' => int 1402950212
                 'owner_id' => -$publicID,
                 'from_group' => 1,
                 'message' => "$text",
-                'attachments' => "{$response[0]->id}", // uploaded image is passed as attachment
+                'attachments' => implode(",", $photos), // uploaded image is passed as attachment
 
 
             ]);
