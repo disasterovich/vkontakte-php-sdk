@@ -354,12 +354,12 @@ class Vkontakte
 
     /**
      * @param $publicID int vk group official identifier
-     * @param $fullServerPathToImage string full path to the image file, ex. /var/www/site/img/pic.jpg
      * @param $text string message text
-     * @param $tags array message tags
+     * @param $fullServerPathToImages string full path to the image file, ex. /var/www/site/img/pic.jpg
+     * @param $vkImages string like photo-85704541_378479362
      * @return bool true if operation finished successfully and false otherwise
      */
-    public function postToPublic($publicID, $text, $fullServerPathToImages, $tags = array())
+    public function postToPublic($publicID, $text, $vkImages=[], $fullServerPathToImages=[])
     {
         $photos = [];
         $output = [];
@@ -421,20 +421,14 @@ public 'created' => int 1402950212
  *
  */
 
-        if ($tags) {
-            $text .= "\n\n";
-        }
-        foreach ($tags as $tag) {
 
-            $text .= ' #' . str_replace(' ', '_', $tag);
-        }
         $text = html_entity_decode($text);
         $response = $this->api('wall.post',
             [
                 'owner_id' => -$publicID,
                 'from_group' => 1,
                 'message' => "$text",
-                'attachments' => implode(",", $photos), // uploaded image is passed as attachment
+                'attachments' => implode(",", array_merge($vkImages,$photos)), // uploaded image is passed as attachment
 
 
             ]);
